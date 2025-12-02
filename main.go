@@ -10,7 +10,6 @@ import (
 	"go-etl/logging"
 	"go-etl/pipeline"
 	"go-etl/transformer"
-	"strconv"
 	"strings"
 )
 
@@ -75,18 +74,6 @@ func main() {
 			AddStage("enrich Trip by ID", enrichTrip)
 
 		p1.Run()
-
-		routeType, err := strconv.Atoi(enrichRoute.Route.RouteType)
-		if err != nil {
-			fmt.Printf("Route: %v\n", enrichRoute.Route)
-			panic(err)
-		}
-
-		if (routeType < 100) || (routeType > 130) {
-			// Skip non-rail routes
-			logger.Warn("Skipping non-rail route: %s of type %d\n", *entity.TripUpdate.Trip.RouteId, routeType)
-			continue
-		}
 
 		for _, stu := range entity.TripUpdate.StopTimeUpdate {
 
