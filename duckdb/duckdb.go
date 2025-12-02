@@ -18,15 +18,24 @@ var (
 )
 
 func fetchDBObjectFromS3(feedVersion string) (*string, error) {
+	objectName := feedVersion + "_feed.db"
+	localPath := "assets/" + objectName
+
+	_, err := os.Stat(localPath)
+
+	if err == nil {
+		logger.Info("DuckDB file already exists locally:", "path", localPath)
+		return &localPath, nil
+	}
+
+	logger.Info("DuckDB file not found locally. Fetching from S3...", "object", objectName)
+
 	s3_client := s3.InitS3Client(
 		os.Getenv("S3_ENDPOINT"),
 		os.Getenv("S3_ACCESS_KEY_ID"),
 		os.Getenv("S3_SECRET_ACCESS_KEY"),
 		true,
 	)
-
-	objectName := feedVersion + "_feed.db"
-	localPath := "assets/" + objectName
 
 	data, err := s3.FetchObject(s3_client, "gtfs-fp", objectName)
 	if err != nil {
