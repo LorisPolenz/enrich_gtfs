@@ -10,6 +10,7 @@ import (
 	"go-etl/logging"
 	"go-etl/pipeline"
 	"go-etl/transformer"
+	"strconv"
 	"strings"
 )
 
@@ -52,45 +53,67 @@ func main() {
 			continue
 		}
 
+		if !helpers.RouteExists(*entity.TripUpdate.Trip.RouteId, feedVersion) {
+			logger.Warn("Skipping Trip Update - Route ID not found in GTFS data", "routeID", *entity.TripUpdate.Trip.RouteId)
+			continue
+		}
+
+		if !helpers.TripExists(*entity.TripUpdate.Trip.TripId, feedVersion) {
+			logger.Warn("Skipping Trip Update - Trip ID not found in GTFS data", "tripID", *entity.TripUpdate.Trip.TripId)
+			continue
+		}
+
 		enrichedStopTimeUpdates := []data.EnrichedStopTimeUpdate{}
+
+		p1 := pipeline.NewPipeline("Enrich Route Pipeline")
+
+		enrichRoute := transformer.NewEnrichRouteByID(*entity.TripUpdate.Trip.RouteId, feedVersion)
+		enrichTrip := transformer.NewEnrichTripByID(*entity.TripUpdate.Trip.TripId, feedVersion)
+
+		p1.
+			AddStage("enrich Route by ID", enrichRoute).
+			AddStage("enrich Trip by ID", enrichTrip)
+
+		p1.Run()
+
+		routeType, err := strconv.Atoi(enrichRoute.Route.RouteType)
+		if err != nil {
+			fmt.Printf("Route: %v\n", enrichRoute.Route)
+			panic(err)
+		}
+
+		if (routeType < 100) || (routeType > 130) {
+			// Skip non-rail routes
+			logger.Warn("Skipping non-rail route: %s of type %d\n", *entity.TripUpdate.Trip.RouteId, routeType)
+			continue
+		}
 
 		for _, stu := range entity.TripUpdate.StopTimeUpdate {
 
-			p1 := pipeline.NewPipeline("Process Stop Time Update")
+			p2 := pipeline.NewPipeline("Process Stop Time Update")
 
 			splitStopID := transformer.NewSplit(*stu.StopId, ":")
 
-			p1.
+			p2.
 				AddStage("split Stop ID by ':'", splitStopID)
 
-			p1.Run()
+			p2.Run()
 
-			p2 := pipeline.NewPipeline("Enrich Stop Name Pipeline")
+			p3 := pipeline.NewPipeline("Enrich Stop Name Pipeline")
 
 			enrichStopName := transformer.NewEnrichStopByID(splitStopID.Parts[0], feedVersion)
 			enrichTripTime := transformer.NewEnrichStopTimeByTripID(*entity.TripUpdate.Trip.TripId, splitStopID.Parts[0], feedVersion)
 
-			p2.
+			p3.
 				AddStage("enrich Stop Name by ID", enrichStopName).
 				AddStage("enrich Stop Times by Trip ID", enrichTripTime)
 
-			p2.Run()
+			p3.Run()
 
 			enrichedStopTimeUpdate := data.NewEnrichedStopTimeUpdate(stu, *enrichStopName.Stop, *enrichTripTime.StopTimes, stu.ScheduleRelationship.String())
 
 			enrichedStopTimeUpdates = append(enrichedStopTimeUpdates, *enrichedStopTimeUpdate)
 		}
-
-		p3 := pipeline.NewPipeline("Enrich Route Pipeline")
-
-		enrichRoute := transformer.NewEnrichRouteByID(*entity.TripUpdate.Trip.RouteId, feedVersion)
-		enrichTrip := transformer.NewEnrichTripByID(*entity.TripUpdate.Trip.TripId, feedVersion)
-
-		p3.
-			AddStage("enrich Route by ID", enrichRoute).
-			AddStage("enrich Trip by ID", enrichTrip)
-
-		p3.Run()
 
 		enrichedTripUpdate := data.NewEnrichedTripUpdate(entity.TripUpdate, enrichedStopTimeUpdates, enrichRoute.Route, enrichTrip.Trip)
 		enrichedFeedEntity := data.NewEnrichedFeedEntity(entity, *enrichedTripUpdate)
