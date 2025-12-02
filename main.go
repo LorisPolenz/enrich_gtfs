@@ -10,17 +10,21 @@ import (
 	"go-etl/logging"
 	"go-etl/pipeline"
 	"go-etl/transformer"
+	"log/slog"
 	"strings"
 )
 
-var logger = logging.GetLogger()
-
 func main() {
-	var objectName string
 
+	var objectName string
+	var logLevel string
+
+	flag.StringVar(&logLevel, "l", "info", "Logging level (debug, info, warn, error)")
 	flag.StringVar(&objectName, "p", "data.pb.gz", "ObjectName of compressed protobuf GTFS-RT file")
 
 	flag.Parse()
+
+	logging.InitLogger(logLevel)
 
 	flag.Usage = func() {
 		fmt.Println("Usage of script:")
@@ -39,7 +43,7 @@ func main() {
 
 	feedVersion := feedMessage.Header.GetFeedVersion()
 
-	logger.Info("Feed Message Stats:", "feedEntities", len(feedMessage.Entity), "version", feedVersion)
+	slog.Info("Feed Message Stats:", "feedEntities", len(feedMessage.Entity), "version", feedVersion)
 
 	enrichedFeedEntities := []data.EnrichedFeedEntity{}
 
@@ -53,12 +57,12 @@ func main() {
 		}
 
 		if !helpers.RouteExists(*entity.TripUpdate.Trip.RouteId, feedVersion) {
-			logger.Warn("Skipping Trip Update - Route ID not found in GTFS data", "routeID", *entity.TripUpdate.Trip.RouteId)
+			slog.Debug("Skipping Trip Update - Route ID not found in GTFS data, or not train route type", "routeID", *entity.TripUpdate.Trip.RouteId)
 			continue
 		}
 
 		if !helpers.TripExists(*entity.TripUpdate.Trip.TripId, feedVersion) {
-			logger.Warn("Skipping Trip Update - Trip ID not found in GTFS data", "tripID", *entity.TripUpdate.Trip.TripId)
+			slog.Debug("Skipping Trip Update - Trip ID not found in GTFS data", "tripID", *entity.TripUpdate.Trip.TripId)
 			continue
 		}
 
@@ -109,9 +113,9 @@ func main() {
 
 	enrichedFeedMessage := data.NewEnrichedFeedMessage(feedMessage, enrichedFeedEntities)
 
-	logger.Info("Enriched Feed Message...", "enrichedFeedEntities", len(enrichedFeedMessage.EnrichedFeedEntities))
+	slog.Info("Enriched Feed Message...", "enrichedFeedEntities", len(enrichedFeedMessage.EnrichedFeedEntities))
 
-	logger.Info("Writing results to json")
+	slog.Info("Writing results to json")
 
 	var sb strings.Builder
 
@@ -122,13 +126,13 @@ func main() {
 	data, err := json.MarshalIndent(enrichedFeedMessage, "", "  ")
 
 	if err != nil {
-		logger.Error("Failed to marshal feed message to JSON", "error", err)
+		slog.Error("Failed to marshal feed message to JSON", "error", err)
 		return
 	}
 
 	helpers.WriteEnrichedFeedMessageToS3("enriched_"+objectName+".json", data)
 
-	logger.Info("Indexing documents to Elasticsearch\n")
+	slog.Info("Indexing documents to Elasticsearch\n")
 
 	elastic.IndexDocuments(enrichedFeedEntities)
 }

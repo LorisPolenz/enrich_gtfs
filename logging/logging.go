@@ -5,13 +5,32 @@ import (
 	"os"
 )
 
-func GetLogger() *slog.Logger {
+func InitLogger(level string) {
+	var logLevel slog.Level
+
+	if level == "debug" {
+		logLevel = slog.LevelDebug
+	}
+
+	if level == "info" {
+		logLevel = slog.LevelInfo
+	}
+
+	if level == "warn" {
+		logLevel = slog.LevelWarn
+	}
+
+	if level == "error" {
+		logLevel = slog.LevelError
+	}
+
 	// Custom handler to format output
-	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level:     slog.LevelDebug, // minimum level
-		AddSource: true,            // include file + line
+	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level:     logLevel, // minimum level
+		AddSource: true,     // include file + line
+
 	})
 	logger := slog.New(handler)
 
-	return logger
+	slog.SetDefault(logger)
 }

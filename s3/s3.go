@@ -3,14 +3,12 @@ package s3
 import (
 	"bytes"
 	"context"
-	"go-etl/logging"
 	"io"
+	"log/slog"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
-
-var logger = logging.GetLogger()
 
 func InitS3Client(endpoint string, accessKeyID string, secretAccessKey string, useSSL bool) *minio.Client {
 
@@ -29,7 +27,7 @@ func InitS3Client(endpoint string, accessKeyID string, secretAccessKey string, u
 
 func FetchObject(client *minio.Client, bucketName string, objectName string) ([]byte, error) {
 
-	logger.Info("Fetching object from S3:", "bucket", bucketName, "object", objectName)
+	slog.Info("Fetching object from S3:", "bucket", bucketName, "object", objectName)
 
 	object, err := client.GetObject(
 		context.Background(),
@@ -39,7 +37,7 @@ func FetchObject(client *minio.Client, bucketName string, objectName string) ([]
 	)
 
 	if err != nil {
-		logger.Error("Error requesting object from S3:", "error", err)
+		slog.Error("Error requesting object from S3:", "error", err)
 		return nil, err
 	}
 
@@ -47,16 +45,16 @@ func FetchObject(client *minio.Client, bucketName string, objectName string) ([]
 
 	stat, err := object.Stat()
 	if err != nil {
-		logger.Error("Error fetching object stats from S3:", "error", err)
+		slog.Error("Error fetching object stats from S3:", "error", err)
 		return nil, err
 	}
 
-	logger.Info("Object info:", "size", stat.Size, "lastModified", stat.LastModified)
+	slog.Info("Object info:", "size", stat.Size, "lastModified", stat.LastModified)
 
 	data, err := io.ReadAll(object)
 
 	if err != nil {
-		logger.Error("Error reading object from S3:", "error", err)
+		slog.Error("Error reading object from S3:", "error", err)
 		return nil, err
 	}
 
@@ -65,7 +63,7 @@ func FetchObject(client *minio.Client, bucketName string, objectName string) ([]
 
 func UploadObject(client *minio.Client, bucketName string, objectName string, data []byte, contentType string) (minio.UploadInfo, error) {
 
-	logger.Info("Uploading object to S3:", "bucket", bucketName, "object", objectName)
+	slog.Info("Uploading object to S3:", "bucket", bucketName, "object", objectName)
 
 	info, err := client.PutObject(
 		context.Background(),

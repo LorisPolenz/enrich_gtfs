@@ -2,9 +2,9 @@ package duckdb
 
 import (
 	"database/sql"
-	"go-etl/logging"
 	"go-etl/s3"
 	"log"
+	"log/slog"
 	"os"
 	"sync"
 
@@ -14,7 +14,6 @@ import (
 var (
 	duckDBConn *sql.DB
 	dbOnce     sync.Once
-	logger     = logging.GetLogger()
 )
 
 func fetchDBObjectFromS3(feedVersion string) (*string, error) {
@@ -24,11 +23,11 @@ func fetchDBObjectFromS3(feedVersion string) (*string, error) {
 	_, err := os.Stat(localPath)
 
 	if err == nil {
-		logger.Info("DuckDB file already exists locally:", "path", localPath)
+		slog.Info("DuckDB file already exists locally:", "path", localPath)
 		return &localPath, nil
 	}
 
-	logger.Info("DuckDB file not found locally. Fetching from S3...", "object", objectName)
+	slog.Info("DuckDB file not found locally. Fetching from S3...", "object", objectName)
 
 	s3_client := s3.InitS3Client(
 		os.Getenv("S3_ENDPOINT"),
@@ -39,13 +38,13 @@ func fetchDBObjectFromS3(feedVersion string) (*string, error) {
 
 	data, err := s3.FetchObject(s3_client, "gtfs-fp", objectName)
 	if err != nil {
-		logger.Error("Error fetching DuckDB file from S3:", "error", err)
+		slog.Error("Error fetching DuckDB file from S3:", "error", err)
 		return nil, err
 	}
 
 	err = os.WriteFile(localPath, data, 0644)
 	if err != nil {
-		logger.Error("Error writing DuckDB file locally:", "error", err)
+		slog.Error("Error writing DuckDB file locally:", "error", err)
 		return nil, err
 	}
 
@@ -54,7 +53,7 @@ func fetchDBObjectFromS3(feedVersion string) (*string, error) {
 
 func openDuckDB(dbPath *string) (*sql.DB, error) {
 
-	logger.Info("Initializing Database...")
+	slog.Info("Initializing Database...")
 
 	// Load the existing database into memory
 	db, err := sql.Open("duckdb", "")
@@ -66,7 +65,7 @@ func openDuckDB(dbPath *string) (*sql.DB, error) {
 		log.Fatal(err)
 	}
 
-	logger.Info("Successfully Initialized Database...")
+	slog.Info("Successfully Initialized Database...")
 
 	if err != nil {
 		log.Fatal(err)

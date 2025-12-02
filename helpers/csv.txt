@@ -1,0 +1,179 @@
+package helpers
+
+import (
+	"encoding/csv"
+	"io"
+	"os"
+	"strconv"
+)
+
+func parseStopsCSV(filePath string) ([]StopCSV, error) {
+	var stops []StopCSV
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+
+	// reader.Comma = ','
+	// reader.FieldsPerRecord = 7
+
+	if _, err := reader.Read(); err != nil {
+		return nil, err
+	}
+
+	for {
+		record, err := reader.Read()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		lat, _ := strconv.ParseFloat(record[2], 64)
+		lon, _ := strconv.ParseFloat(record[3], 64)
+
+		stop := StopCSV{
+			StopID:        record[0],
+			StopName:      record[1],
+			Lat:           lat,
+			Lon:           lon,
+			LocationType:  record[4],
+			ParentStation: record[5],
+			PlatformCode:  record[6],
+		}
+		stops = append(stops, stop)
+
+	}
+	return stops, nil
+}
+
+func parseStopTimesCSV(filePath string) ([]StopTimeCSV, error) {
+	var stopTimes []StopTimeCSV
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+
+	if _, err := reader.Read(); err != nil {
+		return nil, err
+	}
+
+	for {
+		record, err := reader.Read()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		stopTime := StopTimeCSV{
+			TripID:        record[0],
+			ArrivalTime:   record[1],
+			DepartureTime: record[2],
+			StopID:        record[3],
+			StopSequence:  record[4],
+			PickupType:    record[5],
+			DropOffType:   record[6],
+		}
+
+		stopTimes = append(stopTimes, stopTime)
+	}
+	return stopTimes, nil
+}
+
+func parseRoutesCSV(filePath string) ([]RouteCSV, error) {
+	var routes []RouteCSV
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+
+	if _, err := reader.Read(); err != nil {
+		return nil, err
+	}
+
+	for {
+		record, err := reader.Read()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		stopTime := RouteCSV{
+			RouteID:        record[0],
+			AgencyID:       record[1],
+			RouteShortName: record[2],
+			RouteLongName:  record[3],
+			RouteDesc:      record[4],
+			RouteType:      record[5],
+		}
+
+		routes = append(routes, stopTime)
+	}
+	return routes, nil
+}
+
+func parseTripsCSV(filePath string) ([]TripCSV, error) {
+	var routes []TripCSV
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+
+	if _, err := reader.Read(); err != nil {
+		return nil, err
+	}
+
+	for {
+		record, err := reader.Read()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		stopTime := TripCSV{
+			RouteID:        record[0],
+			ServiceID:      record[1],
+			TripID:         record[2],
+			TripHeadsign:   record[3],
+			TripShortName:  record[4],
+			DirectionID:    record[5],
+			BlockID:        record[6],
+			OriginalTripID: record[7],
+			Hints:          record[8],
+		}
+
+		routes = append(routes, stopTime)
+	}
+	return routes, nil
+}

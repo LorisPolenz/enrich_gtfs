@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"go-etl/data"
 	"go-etl/helpers"
-	"go-etl/logging"
 	"log"
+	"log/slog"
 	"os"
 	"sync/atomic"
 	"time"
@@ -15,8 +15,6 @@ import (
 	"github.com/elastic/go-elasticsearch/v9"
 	"github.com/elastic/go-elasticsearch/v9/esutil"
 )
-
-var logger = logging.GetLogger()
 
 type StopLocation struct {
 	Lat float64 `json:"lat"`
@@ -38,7 +36,7 @@ func initClient() *elasticsearch.TypedClient {
 	es_api_key := os.Getenv("ELASTIC_API_KEY")
 
 	if es_host == "" && es_api_key == "" {
-		logger.Error("Elastic credentials (ELASTIC_HOST, ELASTIC_API_KEY) not found in environment variables")
+		slog.Error("Elastic credentials (ELASTIC_HOST, ELASTIC_API_KEY) not found in environment variables")
 		os.Exit(1)
 	}
 
@@ -62,7 +60,7 @@ func initBulkIndexer() esutil.BulkIndexer {
 	es_index := os.Getenv("ELASTIC_TARGET_INDEX")
 
 	if es_index == "" {
-		logger.Error("Elastic (ELASTIC_TARGET_INDEX) target index not found in environment variables")
+		slog.Error("Elastic (ELASTIC_TARGET_INDEX) target index not found in environment variables")
 		os.Exit(1)
 	}
 
@@ -74,7 +72,7 @@ func initBulkIndexer() esutil.BulkIndexer {
 	})
 
 	if err != nil {
-		logger.Error("Error creating the bulk indexer", "error", err)
+		slog.Error("Error creating the bulk indexer", "error", err)
 		os.Exit(1)
 	}
 
@@ -143,8 +141,8 @@ func IndexDocuments(documents []data.EnrichedFeedEntity) error {
 
 	stats := bulkIndexer.Stats()
 
-	logger.Info("Successfully indexed documents", "count", countSuccessful, "duration", time.Since(now))
-	logger.Info("Bulk Indexer Stats", "num_failed", stats.NumFailed, "num_indexed", stats.NumIndexed, "num_created", stats.NumCreated)
+	slog.Info("Successfully indexed documents", "count", countSuccessful, "duration", time.Since(now))
+	slog.Info("Bulk Indexer Stats", "num_failed", stats.NumFailed, "num_indexed", stats.NumIndexed, "num_created", stats.NumCreated)
 
 	return nil
 }

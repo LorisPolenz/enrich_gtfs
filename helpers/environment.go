@@ -1,11 +1,9 @@
 package helpers
 
 import (
-	"go-etl/logging"
+	"log/slog"
 	"os"
 )
-
-var logger = logging.GetLogger()
 
 func validateEnvVars(keys []string) bool {
 	for _, key := range keys {
@@ -27,7 +25,7 @@ func InitEnvVars() {
 	}
 
 	if !validateEnvVars(requiredVars) {
-		logger.Error("One or more required environment variables are missing.")
+		slog.Error("One or more required environment variables are missing.")
 		os.Exit(1)
 	}
 }

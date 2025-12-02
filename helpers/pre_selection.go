@@ -3,7 +3,8 @@ package helpers
 import (
 	"fmt"
 	"go-etl/duckdb"
-	"log"
+	"log/slog"
+	"os"
 	"slices"
 	"sort"
 	"sync"
@@ -40,7 +41,8 @@ func loadTrips(feedVersion string) *[]string {
 		trips, err := db.Query("SELECT DISTINCT trip_id FROM trips;")
 
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Error found", "err", err)
+			os.Exit(1)
 		}
 
 		for trips.Next() {
@@ -64,7 +66,8 @@ func loadRoutes(feedVersion string) *[]string {
 		routes, err := db.Query("SELECT DISTINCT route_id FROM routes WHERE route_type > 100 AND route_type < 200;")
 
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Error found", "err", err)
+			os.Exit(1)
 		}
 
 		defer routes.Close()
