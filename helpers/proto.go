@@ -71,7 +71,7 @@ func LoadFeedMessage(objectName string, localDir string) (*FeedMessage, error) {
 		info, err := os.ReadDir(localDir)
 
 		if err != nil {
-			slog.Error("Error reading local directory:", err)
+			slog.Error("Error reading local directory", "err", err)
 			return nil, err
 		}
 
