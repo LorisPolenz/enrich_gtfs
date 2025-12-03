@@ -1,15 +1,16 @@
-FROM golang:1.25.3 AS builder
+FROM golang:1.25.3-alpine AS builder
 
 WORKDIR /app
 
 COPY . .
 
-RUN go build -o app .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 
-FROM gcr.io/distroless/static:nonroot
+FROM golang:1.25.3-alpine
 
-WORKDIR /app
+# Get CAs
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 COPY --from=builder /app/app .
 
-ENTRYPOINT ["/app/app"]
+CMD ["./app"]
