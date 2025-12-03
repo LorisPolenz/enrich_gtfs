@@ -1,0 +1,5 @@
+*.md
+*.csv
+*.json
+assets/
+assets_dep/
