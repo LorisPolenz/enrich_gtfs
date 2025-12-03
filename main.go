@@ -11,6 +11,7 @@ import (
 	"go-etl/pipeline"
 	"go-etl/transformer"
 	"log/slog"
+	"strconv"
 	"strings"
 )
 
@@ -18,9 +19,11 @@ func main() {
 
 	var objectName string
 	var logLevel string
+	var localDir string
 
 	flag.StringVar(&logLevel, "l", "info", "Logging level (debug, info, warn, error)")
-	flag.StringVar(&objectName, "p", "data.pb.gz", "ObjectName of compressed protobuf GTFS-RT file")
+	flag.StringVar(&objectName, "p", "", "ObjectName of compressed protobuf GTFS-RT file")
+	flag.StringVar(&localDir, "d", "", "Local directory for file storage")
 
 	flag.Parse()
 
@@ -35,7 +38,7 @@ func main() {
 	helpers.InitEnvVars()
 
 	// load pb data
-	feedMessage, err := helpers.LoadFeedMessage(objectName)
+	feedMessage, err := helpers.LoadFeedMessage(objectName, localDir)
 
 	if err != nil {
 		panic(err)
@@ -130,7 +133,7 @@ func main() {
 		return
 	}
 
-	helpers.WriteEnrichedFeedMessageToS3("enriched_"+objectName+".json", data)
+	helpers.WriteEnrichedFeedMessageToS3("enriched_"+strconv.FormatUint(*enrichedFeedMessage.Header.Timestamp, 10)+".json", data)
 
 	slog.Info("Indexing documents to Elasticsearch\n")
 

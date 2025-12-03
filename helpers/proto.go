@@ -3,9 +3,12 @@ package helpers
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"go-etl/s3"
 	"io"
+	"log/slog"
 	"os"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -58,14 +61,46 @@ func deseriaizeGzFeedMessage(fileData []byte) (*FeedMessage, error) {
 	return &msg, nil
 }
 
-func LoadFeedMessage(objectName string) (*FeedMessage, error) {
-	data, err := fetchFeedMessageObjectFromS3(objectName)
+func LoadFeedMessage(objectName string, localDir string) (*FeedMessage, error) {
 
-	if err != nil {
-		return nil, err
+	if localDir != "" && objectName != "" {
+		slog.Warn("Both localDir and objectName provided. localDir will take precedence.")
 	}
 
-	return deseriaizeGzFeedMessage(data)
+	if localDir != "" {
+		info, err := os.ReadDir(localDir)
+
+		if err != nil {
+			slog.Error("Error reading local directory:", err)
+			return nil, err
+		}
+
+		for _, entry := range info {
+			if strings.HasSuffix(entry.Name(), "pb.gz") {
+				filePath := fmt.Sprintf("%s/%s", localDir, entry.Name())
+
+				data, err := os.ReadFile(filePath)
+
+				if err != nil {
+					return nil, err
+				}
+
+				return deseriaizeGzFeedMessage(data)
+			}
+		}
+	}
+
+	if objectName != "" {
+		data, err := fetchFeedMessageObjectFromS3(objectName)
+		if err != nil {
+			return nil, err
+		}
+
+		return deseriaizeGzFeedMessage(data)
+	}
+
+	return nil, fmt.Errorf("either localDir or objectName must be provided")
+
 }
 
 func WriteEnrichedFeedMessageToS3(objectName string, data []byte) error {
