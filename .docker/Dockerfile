@@ -1,16 +1,13 @@
-FROM golang:1.25.3-alpine AS builder
+FROM golang:1.25.3 AS builder
 
-WORKDIR /app
+WORKDIR /go/src
 
 COPY . .
 
-RUN go build -o app .
+RUN GOOS=linux go build -o /go/bin/app
 
-FROM golang:1.25.3-alpine
+FROM golang:1.25.3
 
-# Get CAs
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /go/bin/app /
 
-COPY --from=builder /app/app .
-
-CMD ["./app"]
+ENTRYPOINT ["/app"]
