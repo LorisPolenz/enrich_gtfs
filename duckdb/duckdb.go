@@ -27,6 +27,15 @@ func fetchDBObjectFromS3(feedVersion string) (*string, error) {
 		return &localPath, nil
 	}
 
+	// Crate assets directory if it doesn't exist
+	if _, err := os.Stat("assets"); os.IsNotExist(err) {
+		err := os.Mkdir("assets", 0755)
+		if err != nil {
+			slog.Error("Error creating assets directory:", "error", err)
+			return nil, err
+		}
+	}
+
 	slog.Info("DuckDB file not found locally. Fetching from S3...", "object", objectName)
 
 	s3_client := s3.InitS3Client(
