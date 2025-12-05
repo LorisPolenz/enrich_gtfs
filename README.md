@@ -42,7 +42,7 @@ Currently the following steps need to be executed manually for a new feed_versio
 ```
 CREATE TABLE stops AS SELECT * FROM read_csv('assets/stops.csv', force_not_null = [location_type, parent_station, platform_code]);
 
-CREATE TABLE trips AS SELECT * FROM read_csv('assets/trips.csv', force_not_null = [block_id, original_trip_id], types={'block_id': 'VARCHAR'});
+CREATE TABLE trips AS SELECT * FROM read_csv('assets/trips.csv', force_not_null = [block_id, original_trip_id, hints], types={'block_id': 'VARCHAR'});
 
 CREATE TABLE routes AS SELECT * FROM read_csv('assets/routes.csv', force_not_null = [route_long_name]);
 
