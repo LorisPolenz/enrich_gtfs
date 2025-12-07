@@ -32,8 +32,8 @@ func decompressData(data []byte) ([]byte, error) {
 func fetchFeedMessageObjectFromS3(objectName string) ([]byte, error) {
 	s3_client := s3.InitS3Client(
 		os.Getenv("S3_ENDPOINT"),
-		os.Getenv("S3_ACCESS_KEY_ID"),
-		os.Getenv("S3_SECRET_ACCESS_KEY"),
+		os.Getenv("S3_ACCESS_KEY"),
+		os.Getenv("S3_SECRET_KEY"),
 		true,
 	)
 
@@ -106,8 +106,8 @@ func LoadFeedMessage(objectName string, localDir string) (*FeedMessage, error) {
 func WriteEnrichedFeedMessageToS3(objectName string, data []byte) error {
 	s3_client := s3.InitS3Client(
 		os.Getenv("S3_ENDPOINT"),
-		os.Getenv("S3_ACCESS_KEY_ID"),
-		os.Getenv("S3_SECRET_ACCESS_KEY"),
+		os.Getenv("S3_ACCESS_KEY"),
+		os.Getenv("S3_SECRET_KEY"),
 		true,
 	)
 

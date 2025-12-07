@@ -40,8 +40,8 @@ func fetchDBObjectFromS3(feedVersion string) (*string, error) {
 
 	s3_client := s3.InitS3Client(
 		os.Getenv("S3_ENDPOINT"),
-		os.Getenv("S3_ACCESS_KEY_ID"),
-		os.Getenv("S3_SECRET_ACCESS_KEY"),
+		os.Getenv("S3_ACCESS_KEY"),
+		os.Getenv("S3_SECRET_KEY"),
 		true,
 	)
 

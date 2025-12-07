@@ -23,8 +23,8 @@ ELASTIC_HOST=
 ELASTIC_API_KEY=
 ELASTIC_TARGET_INDEX=
 S3_ENDPOINT=
-S3_ACCESS_KEY_ID=
-S3_SECRET_ACCESS_KEY=
+S3_ACCESS_KEY=
+S3_SECRET_KEY=
 ```
 
 Execute the binary with the flag containing the object name of the compressed protobuf file. 
